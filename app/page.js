@@ -1,52 +1,65 @@
-'use client';
+// app/page.js
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from "react";
+import styles from "./page.module.css";
 
 export default function Home() {
-  const [target, setTarget] = useState('');
-  const [timeLeft, setTimeLeft] = useState(null);
+  const [target, setTarget] = useState("");
+  const [remaining, setRemaining] = useState("");
+  const [endMessage, setEndMessage] = useState("Time's up!");
+  const alerted = useRef(false);
 
   useEffect(() => {
     if (!target) return;
-
     const interval = setInterval(() => {
-      const diff = new Date(target).getTime() - Date.now();
+      const diff = new Date(target) - Date.now();
       if (diff <= 0) {
+        setRemaining(endMessage);
+        if (!alerted.current) {
+          alerted.current = true;
+          alert(endMessage);
+        }
         clearInterval(interval);
-        setTimeLeft({ days:0, hours:0, minutes:0, seconds:0 });
-        return;
+      } else {
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / (1000 * 60)) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+        setRemaining(`${d}d ${h}h ${m}m ${s}s`);
       }
-      const days    = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours   = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-      setTimeLeft({ days, hours, minutes, seconds });
     }, 1000);
-
     return () => clearInterval(interval);
-  }, [target]);
+  }, [target, endMessage]);
 
   return (
-    <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1 style={{ color: '#007acc' }}>🕒 Mini Countdown Timer</h1>
-
-      <div style={{ margin: '1.5rem 0' }}>
+    <main className={styles.container}>
+      <div className={styles.card}>
+        <h1 className={styles.heading}>⏳ Mini Countdown Timer</h1>
         <input
           type="datetime-local"
-          value={target}
-          onChange={e => setTarget(e.target.value)}
-          style={{ padding: '0.5rem', fontSize:'1rem' }}
+          onChange={(e) => setTarget(e.target.value)}
+          className={styles.input}
         />
-      </div>
-
-      {timeLeft && (
-        <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
-          {timeLeft.days} Days&nbsp;
-          {timeLeft.hours} H&nbsp;
-          {timeLeft.minutes} M&nbsp;
-          {timeLeft.seconds} S
+        <input
+          type="text"
+          placeholder="End message"
+          value={endMessage}
+          onChange={(e) => setEndMessage(e.target.value)}
+          className={styles.input}
+        />
+        <button
+          onClick={() => {
+            alerted.current = false;
+          }}
+          className={styles.button}
+        >
+          Start
+        </button>
+        <div className={styles.remaining}>
+          {remaining || "Pick a date/time above"}
         </div>
-      )}
+      </div>
     </main>
   );
 }
